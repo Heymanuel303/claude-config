@@ -186,7 +186,7 @@ for (const p of PHASES) {
   const sha = await agent(
     `Commit the working-tree changes for phase ${p.n} (${p.slug}) of the plan. ` +
     `Follow the /commit command: stage the tree and write ONE Conventional Commits message scoped to what this phase delivered ` +
-    `(summary: "${verdict.summary}"). Reference the phase, e.g. subject like "feat(scope): ... (plan ${p.n})". ` +
+    `(summary: "${verdict.summary}"). Append the phase marker to the subject as the /commit command specifies, e.g. "feat(scope): ... (phase ${p.n})". ` +
     `Do NOT push, do NOT open a PR. Return ONLY the resulting commit SHA (git rev-parse --short HEAD).`,
     { label: `commit:${p.slug}`, phase: 'Commit' }
   )

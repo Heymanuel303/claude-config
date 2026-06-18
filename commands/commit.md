@@ -89,7 +89,7 @@ Stage these markdown edits as part of the same commit. They belong with the work
 **Format (Conventional Commits):**
 
 ```
-{type}({scope}): {subject}
+{type}({scope}): {subject} (phase {N})    ← " (phase {N})" only when this commit closes a plan phase
 
 {body}
 
@@ -115,6 +115,12 @@ Plan: docs/plans/{date}-{feature-name}/NN-*.md
 **Subject** — imperative, lowercase, ≤72 chars, no trailing period. Describes *what changed*, scannable at a glance.
 - Good: `wire url imports to dedicated quota counter`
 - Bad: `Updated the quota logic to work better`
+
+**Phase marker** — when this commit closes a single plan phase (the "Detect phase work" section identified phase `N`), append ` (phase N)` to the **end of the subject** so the log shows which phase landed at a glance:
+- `feat(custom-database): wire url imports to quota counter (phase 2)`
+- The marker counts toward the ≤72-char budget — trim the prose, not the marker.
+- Use the phase number from the phase file name (`02-*.md` → `2`). Omit the marker when no single phase is closed (no plan involved, or an overview-only commit spanning the whole plan).
+- This complements the `Plan:` trailer (which carries the exact file path); the marker is the human-scannable cue, the trailer is the greppable anchor.
 
 **Plan trailer** — when this commit closes a plan phase (the "Detect phase work" section identified one), append a `Plan:` trailer as the **last line** of the message, after the body:
 
@@ -153,7 +159,7 @@ Use a heredoc to preserve formatting:
 
 ```bash
 git commit -m "$(cat <<'EOF'
-{type}({scope}): {subject}
+{type}({scope}): {subject} (phase {N})
 
 {body}
 
@@ -162,7 +168,7 @@ EOF
 )"
 ```
 
-(Drop the `Plan:` line when no plan phase is involved.)
+(Drop the ` (phase {N})` marker and the `Plan:` line when no plan phase is involved.)
 
 For subject-only commits, drop the heredoc:
 
@@ -195,6 +201,7 @@ Do NOT push. Do NOT open a PR. Do NOT start follow-up work.
 - **No empty commits, no amends, no force pushes, no `--no-verify`.**
 - **One concern per commit.** Split if the diff sprawls.
 - **Phase bookkeeping in-band.** When closing a phase, plan-file edits ship in the same commit as the work.
+- **Phase marker when plan-driven.** Append ` (phase N)` to the subject when this commit closes a single plan phase; omit for no-plan or overview-only commits. Stays within ≤72 chars.
 - **Plan trailer when plan-driven.** Last line = `Plan: docs/plans/{date}-{feature-name}/NN-*.md` (exact path). Omit when no plan involved.
 - **Never tick unmet acceptance.** Ask before lying about phase status.
 
