@@ -33,3 +33,22 @@ fi
 mkdir -p "$CLAUDE_DIR"
 ln -s "$SRC" "$TARGET"
 echo "Linked $TARGET -> $SRC"
+
+# ---- shipped scripts onto PATH ---------------------------------------------
+# Symlink each executable in scripts/ into ~/.local/bin (sans .sh) so they run
+# from any repo root, e.g. `plans-summary`. The /plans slash command runs the
+# same script, so terminal and Claude share one implementation.
+BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
+if [ -d "$REPO_DIR/scripts" ]; then
+  mkdir -p "$BIN_DIR"
+  for f in "$REPO_DIR"/scripts/*.sh; do
+    [ -e "$f" ] || continue
+    name="$(basename "$f" .sh)"
+    ln -sf "$f" "$BIN_DIR/$name"
+    echo "Linked $BIN_DIR/$name -> $f"
+  done
+  case ":$PATH:" in
+    *":$BIN_DIR:"*) ;;
+    *) echo "NOTE: $BIN_DIR is not on your PATH — add it to use the scripts by name (the /plans command works regardless)." ;;
+  esac
+fi
