@@ -9,6 +9,8 @@ Because **project-scope commands shadow user-scope ones of the same name**, writ
 
 `$ARGUMENTS` is optional guidance: stack hints the repo doesn't make obvious ("this talks to a Stripe webhook", "treat `infra/` as its own layer"), an emphasis ("be strict about the DB migration contract"), or a subset of commands to generate ("only plan, execute, commit"). Treat it as steering, not the whole spec — the repo is the source of truth.
 
+**Re-runnable — designed to be run again.** Whenever the project changes (new stack, refactored/renamed folders, added modules) or the generic commands themselves improve, run it again. On a re-run it re-profiles the repo from scratch and **updates the existing tailored set in place** — reconciling each command rather than blindly overwriting it (see "First run vs update" and the reconcile rule in the workflow). So the normal way to refresh after a refactor is: just run `/tailor-commands` again.
+
 ## Locate the source templates
 
 The generic commands are the **user-level** set. Resolve their directory and list them:
@@ -23,6 +25,7 @@ These `.md` files are the "same goals" source — read each one as the template 
 
 - **Target dir** — this project's command dir: `"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.claude/commands"`. `mkdir -p` it.
 - **Command set** — default to every template in `$SRC` (minus `tailor-commands.md`). If `$ARGUMENTS` names a subset, generate only those.
+- **First run vs update** — `ls "$TARGET"`. If tailored commands already exist there, this is an **update** run: each existing one is reconciled in place (structure refreshed from the generic template, values refreshed from the new profile, manual edits preserved where the new profile doesn't contradict them) rather than blindly overwritten. New templates not yet tailored are generated fresh; templates the project no longer wants stay as they are (this command never deletes). Say "first run" or "update (N existing)" in your summary line. The files are git-tracked, so the diff is the safety net — tell the user to review it.
 
 ## Profile the project (pre-flight — you, not the workflow)
 
@@ -74,6 +77,8 @@ SPECIALIZE:
 
 HARD RULE: never invent a command, path, layer, table, or tool that isn't in the profile. If the profile doesn't establish something the template needs, keep the generic discover-it-at-runtime wording for that piece rather than fabricating a value. Concrete where known; honest "discover it" where not.
 
+UPDATING (when a tailored version already exists at the destination): this is a 3-way reconcile, not a blind overwrite. Treat the GENERIC TEMPLATE as the source of structure + any new improvements, the CURRENT PROFILE as the source of fresh values (commands, paths, layers, guardrails — these supersede whatever the old tailored file had, so a renamed folder or swapped test command gets corrected), and the EXISTING TAILORED FILE as the source of intentional manual edits to preserve where the new profile doesn't contradict them. Net effect: stale values from a previous stack/layout are refreshed, generic-template improvements are pulled in, and hand-tuning survives.
+
 User steering for this project: ${INSTRUCTIONS}`
 
 const VERIFY_SCHEMA = {
@@ -89,11 +94,12 @@ const VERIFY_SCHEMA = {
 const specializePrompt = (cmd) =>
   `Specialize ONE generic slash-command for this project.\n\n` +
   `READ the generic template (Read tool): ${SRC}/${cmd}\n` +
+  `ALSO READ, if it exists, the existing tailored version at ${DEST}/${cmd} — if present, this is an UPDATE: reconcile per the UPDATING rule below (refresh values from the current profile, pull in template improvements, preserve intentional manual edits). If it does NOT exist, generate fresh from the template.\n` +
   `WRITE the project-tailored version (Write tool): ${DEST}/${cmd}\n\n` +
   `PROJECT PROFILE:\n${PROFILE}\n\n` +
   `${SPEC}\n\n` +
-  `Read the template fully, specialize it per the rules using the profile, and Write the result to ${DEST}/${cmd}. ` +
-  `Return JSON {changed:[the project-specific values you baked in], notes:'anything the verifier should check'}.`
+  `Read the template (and the existing tailored file if any) fully, specialize/reconcile per the rules using the profile, and Write the result to ${DEST}/${cmd}. ` +
+  `Return JSON {changed:[the project-specific values you baked in or refreshed], notes:'anything the verifier should check'}.`
 
 const verifyPrompt = (cmd) =>
   `Verify the project-tailored command at ${DEST}/${cmd} against this project profile:\n${PROFILE}\n\n` +
@@ -101,8 +107,9 @@ const verifyPrompt = (cmd) =>
   `(2) where the profile establishes a concrete value, the command USES it (not leftover "discover it" hand-waving); ` +
   `(3) where the profile does NOT establish a value, the command honestly keeps discover-at-runtime wording (not a fabricated value); ` +
   `(4) the command's goal, structure, and orchestration logic are preserved and coherent; ` +
-  `(5) sections that don't apply to this project were dropped, not left dangling. ` +
-  `Return JSON {ok, problems:[concrete issues], summary}. Default ok=false if anything is invented or incoherent.`
+  `(5) sections that don't apply to this project were dropped, not left dangling; ` +
+  `(6) on an update, NO stale value from a previous stack/layout survives — every command/path/layer matches the CURRENT profile (flag leftovers like an old test command or a renamed folder). ` +
+  `Return JSON {ok, problems:[concrete issues], summary}. Default ok=false if anything is invented, stale, or incoherent.`
 
 const fixPrompt = (cmd, v) =>
   `The tailored command at ${DEST}/${cmd} failed verification. Problems:\n` +
@@ -127,7 +134,8 @@ return results.map((x, i) => x
 ## After the workflow returns
 
 - Confirm each tailored file exists under the target `.claude/commands/`.
-- Report (bullets): the project profile in one line, the list of commands written (✓ ok / ⚠ needed fixes / ✗ failed), and any `problems` left unresolved.
+- Report (bullets): "first run" or "update (N existing)", the project profile in one line, the list of commands written (✓ ok / ⚠ needed fixes / ✗ failed), and any `problems` left unresolved.
+- On an update, point the user at `git diff -- .claude/commands/` so they can see exactly what changed (refreshed values vs preserved edits) — the tracked diff is the safety net for the in-place reconcile.
 - Remind the user: these are now this project's overrides (project scope shadows the global generic ones here), and the files are **uncommitted** — they should review the generated commands and commit them with the project's own convention. Don't commit or push yourself.
 
 ## Rules
@@ -136,6 +144,7 @@ return results.map((x, i) => x
 - **Concrete where known, honest where not.** Bake in real values; keep discover-at-runtime wording only for what the profile didn't establish.
 - **Same names, project scope.** Generated files reuse the generic command names so they cleanly shadow the globals in this project. Write only into this project's `.claude/commands/`.
 - **Preserve goals + orchestration.** Specialize the inputs, not the strategy — keep each command's structure and fan-out logic intact.
+- **Re-run = update, not clobber.** When a tailored file already exists, reconcile it (refresh profile-derived values, pull in template improvements, keep intentional manual edits) instead of overwriting blind. Never delete a tailored command the project no longer maps to — leave it for the user.
 - **No commit, no push.** Hand back uncommitted files for the user to review.
 - **One round of questions max** before running the workflow.
 
