@@ -45,6 +45,16 @@ plans/reports under `docs/` in whatever repo you run them in.
 | `/backlog` | Capture a raw idea as a date-prefixed brief in `docs/plans/backlog/` after a shallow skim. |
 | `/explore-stack` | Read-only cross-layer investigation of a topic; synthesizes a map of where it shows up. |
 | `/extract-shared` | Find code in multiple modules that should be extracted into a shared package/library. |
+| `/tailor-commands` | Generate project-specialized versions of these commands into the current project's `.claude/commands/` — same goals, but with the project's real stack/commands/layers baked in. The inverse of the generic set. |
+
+### Generic default ↔ tailored override
+
+The commands here are the **universal default** for every project. For a project
+you work in often, run `/tailor-commands` *inside it* to emit specialized copies
+into that project's `.claude/commands/`. Because **project-scope commands shadow
+user-scope ones of the same name**, the tailored `/plan` (etc.) runs there while
+every other repo keeps the generic one. Specific→generic built this set;
+`/tailor-commands` goes generic→specific on demand.
 
 ## Editing
 
