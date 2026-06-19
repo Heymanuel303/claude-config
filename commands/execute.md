@@ -47,10 +47,23 @@ Read the phase's `**Execution:**` field:
 
 State which mode you're using in one line before starting.
 
+## Engineering principles
+
+Whatever you write — solo or via a workflow editor — hold the change to these. They are the bar for "done correctly," not aspirations. When two principles pull against each other (most often DRY vs. LoB), favor the reader who lands on the file cold and prefer the choice that keeps a single feature understandable in one place. Apply them to the code you write, not as license to refactor surrounding code outside the phase scope.
+
+- **SOLID** — single responsibility per unit; depend on abstractions where the project already does, not on concretions you introduce. Don't bolt a second job onto an existing class/function because it's convenient.
+- **KISS** — the simplest construct that satisfies the phase. No speculative generality, no config knobs nothing uses, no abstraction with one caller. If a plain function does it, don't write a framework.
+- **DRY** — deduplicate genuine domain logic. But only genuine duplication — see the LoB tension below; two things that look alike but change for different reasons are not duplication.
+- **PoLA (Principle of Least Astonishment)** — code behaves the way its name and signature imply. A reader trusts the interface without re-reading the body. In practice: descriptive names that match actual behavior; no side effects buried in innocent-looking calls (a `getX()` doesn't write, log out, or mutate global state); consistent return types; errors that fail loudly rather than getting silently swallowed.
+- **LoB (Locality of Behavior)** — a unit of code is understandable from the one place it lives, without hunting across ten files. Keep a feature's logic, and the behavior it drives, together. This matters most for cold readers and AI agents with limited context — scattered indirection forces them to reconstruct the whole picture before changing anything, which is where mistakes start.
+- **DRY ↔ LoB balance** — aggressive deduplication pulls shared logic into distant abstractions and hurts locality. Deduplicate real shared domain logic; tolerate a little repetition when extracting it would force a reader to jump around to understand a single feature. When in doubt, keep related things close.
+
+These describe how the code you add should read — they do **not** authorize rewriting neighboring code, "fixing" violations elsewhere, or expanding the phase. Spotted a principle violation outside scope? Note it in the report; don't touch it.
+
 ## Execute (solo)
 
 1. **Plan tasks.** Use `TaskCreate` to mirror the phase's "Steps" list. Mark each `in_progress` / `completed` as you go.
-2. **Implement.** Edit files using `Edit` / `Write`. Stay within the phase's stated scope. If the phase says "do X in file Y" and you discover Y also needs Z to compile, do Z — but flag scope creep in the final report. Follow the project's existing conventions (state management, error handling, layering, naming) — discover them from neighboring code, don't impose new ones.
+2. **Implement.** Edit files using `Edit` / `Write`. Stay within the phase's stated scope. If the phase says "do X in file Y" and you discover Y also needs Z to compile, do Z — but flag scope creep in the final report. Follow the project's existing conventions (state management, error handling, layering, naming) — discover them from neighboring code, don't impose new ones. Hold every change to the **Engineering principles** above (SOLID, KISS, DRY, PoLA, LoB).
 3. **Verify.** Run the commands under the phase's "Verification" section — the lint/format/test/build commands of the project, discovered as above. Typically:
    - the project's lint/static-analysis step
    - the project's formatter (or its check mode)
@@ -68,7 +81,7 @@ The phase is marked `**Execution:** workflow`. Author **one** `Workflow` call in
    - **Shape:** `pipeline(items, transform, verify)` for independent edit-sites/files (the default — each item flows transform→verify without a barrier). `parallel(...)` only when a stage genuinely needs all prior results together (cross-file dedup, all-or-nothing gate). `find → transform → verify` when sites were discovered in pre-flight.
    - **Fan-out unit:** one agent per file / call-site / layer / dimension, as the section states.
    - **Isolation:** `isolation: 'worktree'` ONLY if agents would edit the **same** file concurrently. If each agent owns a distinct file, omit it — they edit the shared tree without conflict (cheaper, no merge step).
-   - **Cold prompts:** each agent starts fresh — embed the exact file path, the precise change, and the pattern to follow as string literals. Reference no conversation context. Tell each editor to stay strictly within its assigned file/scope and leave changes uncommitted.
+   - **Cold prompts:** each agent starts fresh — embed the exact file path, the precise change, and the pattern to follow as string literals. Reference no conversation context. Tell each editor to stay strictly within its assigned file/scope, hold its edit to the **Engineering principles** above (SOLID, KISS, DRY, PoLA, LoB — interpolate them into the prompt, since the agent can't see this file), and leave changes uncommitted.
    - **Verify stage:** have each item's verifier confirm its edit compiles/matches intent; for high-assurance phases, make verifiers adversarial (try to refute the edit) and use a `schema` so verdicts are structured.
 3. **Run it**, then **reconcile in this session:** review the diff the workflow produced, run the phase's full "Verification" commands yourself (lint/format/test/build, discovered for this project) against the merged tree, and fix any cross-file breakage the per-item agents couldn't see. A green per-item verifier is not a green phase — you own the whole-tree verification.
 4. **Check acceptance** exactly as in solo mode. If a box can't be checked, stop and report.
@@ -124,6 +137,7 @@ End-of-turn summary (1–3 sentences):
 - **No edits outside the phase scope** except minimum-needed compile fixes — and flag them.
 - **Don't rewrite the plan.** If the phase is wrong, report it; user decides whether to revise the plan or push through.
 - **Tests are part of the phase.** A phase isn't done until its changes are covered by tests (via the `/test` command) and green — unless nothing testable changed.
+- **Hold the bar.** Every change you add must satisfy the **Engineering principles** (SOLID, KISS, DRY, PoLA, LoB). They govern the code you write, not the code around it — flag out-of-scope violations, don't fix them.
 
 ## Output style
 
