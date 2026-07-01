@@ -43,6 +43,7 @@ plans/reports under `docs/` in whatever repo you run them in.
 | `/review` | Pre-release review of the committed work that implemented a plan — one reviewer per discovered layer. |
 | `/code-review` | Deep DX/quality scan of the codebase against five engineering principles (was `dart-review`; now language-agnostic, inline workflow). |
 | `/debug` | Root-cause a bug by fanning out parallel read-only investigators across layers + observability sources. |
+| `/clarify` | Read-only "does this belong here / where should it go?" verdict on tagged files + uncommitted (incl. worktree) changes. Grounds placement advice in repo conventions; no edits. |
 | `/test` | Write tests for the current session's changes; run them in an isolated subagent. Tests only — never edits production code; halts and reports if a test exposes a genuine bug. |
 | `/commit` | Stage + commit with a Conventional Commits message, including plan-phase bookkeeping. |
 | `/backlog` | Capture a raw idea as a date-prefixed brief in `docs/plans/backlog/` after a shallow skim. |
