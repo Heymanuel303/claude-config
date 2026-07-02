@@ -1,6 +1,6 @@
 ---
 description: Execute an entire multi-phase plan in docs/plans/ end-to-end. A single background workflow walks the phases in order — execute → independent review → fix-loop → commit — spawning a fresh agent for each step so the orchestrator stays context-thin and only sees pass/fail verdicts. Stops on the first blocker.
-model: opus
+model: fable
 ---
 
 Drive a whole plan to completion, one phase at a time, autonomously. This is the orchestrator over the `/execute` command — `/execute` runs **one** phase; `/execute-all` runs **all** of them in dependency order, with an independent review + fix loop and a checkpoint commit per green phase.

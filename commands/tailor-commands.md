@@ -1,6 +1,6 @@
 ---
 description: Generate a project-tailored set of slash-commands into THIS project's .claude/commands/ — same goals and structure as the global generic commands, but specialized to the project's real stack, layout, build commands, and conventions. Driven by $ARGUMENTS + repo discovery.
-model: opus
+model: fable
 ---
 
 Specialize the global generic commands for the current project. This is the **inverse** of the generic set: instead of "discover the project's test command at run time", each tailored command **bakes the project's real commands, paths, layers, and guardrails in as concrete defaults** — like a hand-written, project-specific command. The generic commands stay universal; these become this project's overrides.

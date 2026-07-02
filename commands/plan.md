@@ -1,6 +1,6 @@
 ---
 description: Write a detailed multi-phase implementation plan to docs/plans/{date}-{feature-name}/ based on the current conversation. A single workflow explores the repo and drafts every phase in parallel; each phase records whether /execute should run it solo or as a workflow.
-model: opus
+model: fable
 ---
 
 Generate a durable, executable plan from the in-flight conversation. Output goes to `docs/plans/{date}-{feature-name}/` (date-prefixed so `ls docs/plans/` sorts chronologically oldest→newest). Each phase file must stand alone — a fresh Claude session reading only that file plus the repo should be able to finish it end-to-end.

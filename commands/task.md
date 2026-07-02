@@ -1,6 +1,6 @@
 ---
 description: Complete an arbitrary task outside of any plan — typically finishing work the user started by hand. Reads the user's uncommitted edits as the statement of intent, completes the work in the same direction, verifies, and records a lightweight task file that /test and /commit pick up.
-model: opus
+model: fable
 ---
 
 Complete a task the user started manually. This is the human-in-the-middle path: the user writes code by hand — a signature, a stub, a pattern applied in one place, a half-wired feature — then invokes this command to finish the intention. Invoked like:
