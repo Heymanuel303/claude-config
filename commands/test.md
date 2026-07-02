@@ -14,10 +14,11 @@ Write tests covering work done earlier in this session, then drive the *tests* t
 
 ## Resolve scope
 
-1. Identify what changed this session — edited files, new functions, modified behavior. Use `git status` + `git diff` if unsure.
-2. Map each change to its module. Don't assume a fixed list — enumerate the project's modules / packages / services / layers as they exist in this checkout (in a single-package repo the modules are the top-level source directories). Pick the test runner per module by reading its build manifest: discover how THIS project runs tests by reading any agent guide (CLAUDE.md, AGENTS.md, .cursor/rules, README, CONTRIBUTING) and whatever build manifests are present (for example package.json scripts, Makefile, Cargo.toml, pyproject.toml / tox.ini / noxfile, go.mod, build.gradle / pom.xml, Gemfile, composer.json, melos.yaml / pubspec.yaml). Use what the repo actually declares — never assume a toolchain.
-3. State the resolved scope in one line before writing:
-   `Testing: {feature/change} — {module(s)}`
+1. **Check for a task record first.** If this session's work was driven by `/task`, a record exists at `docs/tasks/{date}-{slug}.md` (referenced in conversation, or `Status: ongoing`/freshly `completed` and matching the diff). `Read` it: its **Intent** and **Completion scope** define what to test, and its **Acceptance** criteria are behaviors to cover. `$ARGUMENTS` still narrows within that.
+2. Otherwise, identify what changed this session — edited files, new functions, modified behavior. Use `git status` + `git diff` if unsure.
+3. Map each change to its module. Don't assume a fixed list — enumerate the project's modules / packages / services / layers as they exist in this checkout (in a single-package repo the modules are the top-level source directories). Pick the test runner per module by reading its build manifest: discover how THIS project runs tests by reading any agent guide (CLAUDE.md, AGENTS.md, .cursor/rules, README, CONTRIBUTING) and whatever build manifests are present (for example package.json scripts, Makefile, Cargo.toml, pyproject.toml / tox.ini / noxfile, go.mod, build.gradle / pom.xml, Gemfile, composer.json, melos.yaml / pubspec.yaml). Use what the repo actually declares — never assume a toolchain.
+4. State the resolved scope in one line before writing:
+   `Testing: {feature/change} — {module(s)}` — append ` — task: docs/tasks/{date}-{slug}.md` when a task record set the scope.
 
 If nothing testable changed (pure docs, config-only, generated code) → stop and say so. Don't fabricate tests.
 
@@ -113,6 +114,7 @@ Do NOT commit. Do NOT push. Leave staging clean for the user to review.
 - **Tests only.** This command writes and fixes tests. It NEVER edits production code — not to pass a test, not "while I'm here."
 - **Genuine defect → halt.** If a correct test exposes a real bug in the code, stop everything and report it. Don't fix it, don't hide it. Ambiguous → treat as a defect and halt.
 - **Session-scoped.** Only test what changed this session. No backfilling unrelated coverage.
+- **Task-aware.** When a `/task` record exists for this session's work, its Intent/Completion scope bound the tests and its Acceptance criteria are the behaviors to cover. Don't edit the task record — ticking acceptance is `/task`'s and `/commit`'s job.
 - **Isolated execution.** Test runs go through a subagent so output doesn't pollute main context.
 - **No cheating green.** No skipped tests, no loosened asserts, no swallowed errors, no flakiness hacks.
 - **Stop after 3 rerun cycles.** If it's still red, the user needs to weigh in.

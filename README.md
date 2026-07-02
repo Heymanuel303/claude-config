@@ -40,12 +40,13 @@ plans/reports under `docs/` in whatever repo you run them in.
 | `/vet-plan` | Fact-check a not-yet-executed plan against the real repo, one checker per phase. |
 | `/execute` | Execute a single plan phase cold (solo or fan-out per the phase's `Execution:` field), verify, write tests. |
 | `/execute-all` | Drive a whole plan end-to-end: execute → independent review → fix-loop → commit, per phase, autonomously. |
+| `/task` | Complete an arbitrary task outside any plan — human-in-the-middle: you start the code by hand, it reads your uncommitted edits as the intent, finishes in your direction, and records `docs/tasks/{date}-{slug}.md` for `/test` + `/commit` to pick up. |
 | `/review` | Pre-release review of the committed work that implemented a plan — one reviewer per discovered layer. |
 | `/code-review` | Deep DX/quality scan of the codebase against five engineering principles (was `dart-review`; now language-agnostic, inline workflow). |
 | `/debug` | Root-cause a bug by fanning out parallel read-only investigators across layers + observability sources. |
 | `/clarify` | Read-only "does this belong here / where should it go?" verdict on tagged files + uncommitted (incl. worktree) changes. Grounds placement advice in repo conventions; no edits. |
 | `/test` | Write tests for the current session's changes; run them in an isolated subagent. Tests only — never edits production code; halts and reports if a test exposes a genuine bug. |
-| `/commit` | Stage + commit with a Conventional Commits message, including plan-phase bookkeeping. |
+| `/commit` | Stage + commit with a Conventional Commits message, including plan-phase and `/task`-record bookkeeping. |
 | `/backlog` | Capture a raw idea as a date-prefixed brief in `docs/plans/backlog/` after a shallow skim. |
 | `/explore-stack` | Read-only cross-layer investigation of a topic; synthesizes a map of where it shows up. |
 | `/extract-shared` | Find code in multiple modules that should be extracted into a shared package/library. |

@@ -36,7 +36,7 @@ Build a concrete **project profile** the specializers will bake in. Discover, do
 - **Layout / layers** — the real module/package/service/layer structure (e.g. `apps/web` + `services/api` + `packages/*`, or a single package's top-level source dirs). Name the natural review/investigation layers.
 - **Database** — does it have one? Migrations dir? A way to inspect it (an MCP server, a CLI like `psql`/`mysql`)? Does schema deploy independently of clients (→ migration contract matters)?
 - **Observability** — error tracking / logs tooling, if any (Sentry, etc.).
-- **Conventions** — protected branches, commit style, where plans/docs live, naming rules, any repo-specific guardrails worth enforcing (the "single most important rule" type).
+- **Conventions** — protected branches, commit style, where plans/docs live (plans under `docs/plans/`, `/task` records under `docs/tasks/`, unless the project relocates them), naming rules, any repo-specific guardrails worth enforcing (the "single most important rule" type).
 - **Today's date** via `date +%F` (the workflow script can't compute it).
 
 Fold `$ARGUMENTS` into the profile. State the profile in a tight summary line before running the workflow. Use `AskUserQuestion` **once** only if something load-bearing is genuinely unresolvable (e.g. no test command found anywhere, or the user's instruction contradicts the repo) — otherwise proceed.
@@ -62,7 +62,7 @@ const PROFILE = `{the full project profile from pre-flight: stack; the EXACT lin
 const INSTRUCTIONS = `{$ARGUMENTS verbatim, or "none"}`
 
 // Templates to specialize — listed from SRC, excluding tailor-commands.md.
-const COMMANDS = [ 'plan.md', 'execute.md', 'execute-all.md', 'review.md', 'code-review.md', 'debug.md', 'test.md', 'commit.md', 'backlog.md', 'explore-stack.md', 'extract-shared.md', 'vet-plan.md' ]
+const COMMANDS = [ 'plan.md', 'execute.md', 'execute-all.md', 'review.md', 'code-review.md', 'debug.md', 'test.md', 'task.md', 'commit.md', 'backlog.md', 'clarify.md', 'explore-stack.md', 'extract-shared.md', 'vet-plan.md', 'plans.md' ]
 
 const SPEC = `You are SPECIALIZING one generic slash-command for a specific project. The generic template is written to discover the toolchain at run time; your job is to bake the project's REAL values in as the defaults so the command is concrete and ready to run here.
 

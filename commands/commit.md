@@ -42,7 +42,7 @@ Check whether this commit closes a plan phase before composing the message:
    - The phase file (e.g. `docs/plans/2026-06-09-entitlements-generic/02-quota-wiring.md`).
    - The overview (`docs/plans/{date}-{feature-name}/00-overview.md`).
 3. If ambiguous (multiple plans touched, or unclear which phase) → `AskUserQuestion` once to confirm or skip.
-4. If no phase is involved, skip this section entirely and proceed to message composition.
+4. If no phase is involved, skip this section entirely and check for task work next.
 
 When a phase is identified, follow this **exact procedure** before staging. Do not skip steps.
 
@@ -84,6 +84,19 @@ Never tick phase lines or acceptance boxes for phases not closed by **this** com
 
 Stage these markdown edits as part of the same commit. They belong with the work they describe.
 
+## Detect task work
+
+Only when no plan phase is involved. Check whether this commit lands work driven by a `/task` record:
+
+1. Look for a task file under `docs/tasks/{date}-{slug}.md` tied to this session — referenced in the conversation, present in the diff, or whose `Intent`/`Started by hand` matches the changed paths.
+2. If none matches the diff → skip this section; it's a plain commit.
+3. `Read` the matching task file fresh — don't rely on memory.
+   - `Status: completed` → the task closed cleanly; stage the record with the work.
+   - `Status: ongoing` → ask once via `AskUserQuestion`: does this commit close the task, or is it a checkpoint? If it closes → flip `Status:` to `completed` and tick `- [ ]` → `- [x]` under "Acceptance" **only** for criteria actually met by this commit. If checkpoint → leave the record as-is (still stage it if it changed this session).
+4. If multiple task records could match → `AskUserQuestion` once to pick or skip.
+
+Never tick unmet acceptance boxes. The task record ships in the same commit as the work it describes.
+
 ## Compose message
 
 **Format (Conventional Commits):**
@@ -110,7 +123,8 @@ Plan: docs/plans/{date}-{feature-name}/NN-*.md
 **Scope** — derive in this priority order:
 
 1. **Plan-driven work → the plan's `{feature-name}`.** When the "Detect phase work" section identified a plan under `docs/plans/{date}-{feature-name}/`, the scope is `{feature-name}` verbatim (the folder name with the date prefix stripped). Example: a commit closing `docs/plans/2026-06-15-custom-database/02-*.md` → `feat(custom-database): …`, `chore(custom-database): …`. This holds regardless of which modules/packages the diff touches — the plan is the unit of work.
-2. **No plan → the module or area touched**, derived from the changed paths and the project's actual layout: the name of the touched package/module/service/layer (in a monorepo, the workspace member; in a single-package repo, the top-level source directory or area). Examples only — `api`, `auth`, `parser`, `ui`, `cli`, `db`, `ci` — never assume any of these exist; read them off the repo. Match recent log style — check `git log` for how this scope was written before. Multi-module → pick the most-impacted, or omit scope if truly cross-cutting.
+2. **Task-driven work → the module or area touched** (same derivation as below), NOT the task slug — tasks are ad-hoc, so the scope should say where the change landed. The task's identity travels in the `Task:` trailer instead.
+3. **No plan, no task → the module or area touched**, derived from the changed paths and the project's actual layout: the name of the touched package/module/service/layer (in a monorepo, the workspace member; in a single-package repo, the top-level source directory or area). Examples only — `api`, `auth`, `parser`, `ui`, `cli`, `db`, `ci` — never assume any of these exist; read them off the repo. Match recent log style — check `git log` for how this scope was written before. Multi-module → pick the most-impacted, or omit scope if truly cross-cutting.
 
 **Subject** — imperative, lowercase, ≤72 chars, no trailing period. Describes *what changed*, scannable at a glance.
 - Good: `wire url imports to dedicated quota counter`
@@ -130,6 +144,13 @@ Plan: docs/plans/{date}-{feature-name}/NN-*.md
 - Omit entirely when no plan/phase is involved.
 
 This makes history greppable: `git log --grep="docs/plans/2026-06-09-entitlements-generic"` finds every commit tied to a plan.
+
+**Task trailer** — when this commit lands `/task`-driven work (the "Detect task work" section matched a record), append a `Task:` trailer as the **last line** instead:
+
+- `Task: docs/tasks/{date}-{slug}.md` — the exact task file path on disk, relative repo path, never absolute.
+- Include it on checkpoint commits too (task still `ongoing`), not just the closing one — every commit tied to the task should be greppable via `git log --grep="docs/tasks/{date}-{slug}"`.
+- A commit never carries both trailers: plan work uses `Plan:`, task work uses `Task:`, plain commits use neither.
+- No subject marker for tasks (no ` (phase N)` analog) — the trailer is enough.
 
 **Body** — include when *why* or *what* isn't obvious from the subject + diff. Omit when the subject already says it.
 
@@ -168,7 +189,7 @@ EOF
 )"
 ```
 
-(Drop the ` (phase {N})` marker and the `Plan:` line when no plan phase is involved.)
+(Drop the ` (phase {N})` marker and the `Plan:` line when no plan phase is involved. For task-driven work, the last line is `Task: docs/tasks/{date}-{slug}.md` instead.)
 
 For subject-only commits, drop the heredoc:
 
@@ -201,6 +222,8 @@ Do NOT push. Do NOT open a PR. Do NOT start follow-up work.
 - **No empty commits, no amends, no force pushes, no `--no-verify`.**
 - **One concern per commit.** Split if the diff sprawls.
 - **Phase bookkeeping in-band.** When closing a phase, plan-file edits ship in the same commit as the work.
+- **Task bookkeeping in-band.** When the commit lands `/task`-driven work, the task record under `docs/tasks/` ships in the same commit — closed (`Status: completed` + met boxes ticked) if this commit finishes it, as-is if it's a checkpoint.
+- **Task trailer when task-driven.** Last line = `Task: docs/tasks/{date}-{slug}.md`. Never both `Plan:` and `Task:` on one commit.
 - **Phase marker when plan-driven.** Append ` (phase N)` to the subject when this commit closes a single plan phase; omit for no-plan or overview-only commits. Stays within ≤72 chars.
 - **Plan trailer when plan-driven.** Last line = `Plan: docs/plans/{date}-{feature-name}/NN-*.md` (exact path). Omit when no plan involved.
 - **Never tick unmet acceptance.** Ask before lying about phase status.
