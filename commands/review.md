@@ -53,6 +53,8 @@ Build one `LAYERS` entry per discovered layer that the commit range touches. For
 
 Author **one** `Workflow` call inline. It runs a single phase that fans out one `Explore` reviewer per layer in parallel, each forced to return structured findings via schema. Interpolate the resolved plan slug, commit range, branch, the commit list, and the `LAYERS` array (with each layer's scope, checks, relevant plan phases, and filtered touched files) as literals.
 
+Every `agent()` call in the script must include `model: 'claude-fable-5'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
+
 Use this script template:
 
 ```js
@@ -149,7 +151,7 @@ const reviewPrompt = (l) =>
 
 phase('Review')
 const results = await parallel(LAYERS.map(l => () =>
-  agent(reviewPrompt(l), { label: `review:${l.key}`, phase: 'Review', agentType: 'Explore', schema: REVIEW_SCHEMA })))
+  agent(reviewPrompt(l), { label: `review:${l.key}`, phase: 'Review', agentType: 'Explore', model: 'claude-fable-5', schema: REVIEW_SCHEMA })))
 
 return LAYERS.map((l, i) => ({ layer: l.key, ...(results[i] || { skipped: true }) }))
 ```

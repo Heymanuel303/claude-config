@@ -45,6 +45,8 @@ Fold `$ARGUMENTS` into the profile. State the profile in a tight summary line be
 
 Author **one** `Workflow` call inline. The workflow agents start cold — interpolate the resolved `$SRC`, target dir, the full **project profile**, and `$ARGUMENTS` into the script as string literals; never write "see conversation". Shape: **Specialize → Verify → Fix** (a pipeline, one command per item).
 
+Every `agent()` call in the script must include `model: 'claude-fable-5'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
+
 ```js
 export const meta = {
   name: 'tailor-commands',
@@ -119,11 +121,11 @@ const fixPrompt = (cmd, v) =>
 
 const results = await pipeline(
   COMMANDS,
-  (cmd) => agent(specializePrompt(cmd), { label: `tailor:${cmd}`, phase: 'Specialize' }).then(r => ({ cmd, r })),
-  (prev, cmd) => agent(verifyPrompt(cmd), { label: `verify:${cmd}`, phase: 'Verify', schema: VERIFY_SCHEMA }).then(v => ({ ...prev, v })),
+  (cmd) => agent(specializePrompt(cmd), { label: `tailor:${cmd}`, phase: 'Specialize', model: 'claude-fable-5' }).then(r => ({ cmd, r })),
+  (prev, cmd) => agent(verifyPrompt(cmd), { label: `verify:${cmd}`, phase: 'Verify', model: 'claude-fable-5', schema: VERIFY_SCHEMA }).then(v => ({ ...prev, v })),
   (prev, cmd) => (prev.v && prev.v.ok)
     ? prev
-    : agent(fixPrompt(cmd, prev.v), { label: `fix:${cmd}`, phase: 'Fix', schema: VERIFY_SCHEMA }).then(v2 => ({ ...prev, v: v2, fixed: true })),
+    : agent(fixPrompt(cmd, prev.v), { label: `fix:${cmd}`, phase: 'Fix', model: 'claude-fable-5', schema: VERIFY_SCHEMA }).then(v2 => ({ ...prev, v: v2, fixed: true })),
 )
 
 return results.map((x, i) => x

@@ -1,6 +1,7 @@
 ---
 name: code-review
 description: Deep-scan every module and source layer of the project against five DX/quality principles via a workflow, and produce one report
+model: opus
 ---
 
 Run a **`code-review` workflow** to deep-scan every layer of the codebase. Author **one** `Workflow` call inline (mirroring how `/plan` and `/explore-stack` embed their scripts) — do not scan inline.
@@ -21,6 +22,8 @@ The workflow runs three phases:
 ## Run the review workflow
 
 Author **one** `Workflow` call inline. Interpolate the discovered lint command, format-check command, and the project's known module layout into the script as string literals — the workflow agents start cold, so never write "see conversation" or assume a toolchain.
+
+Every `agent()` call in the script must include `model: 'claude-opus-4-8'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
 
 Use this script template:
 
@@ -133,7 +136,7 @@ repo:
 Use 'ls' / actual repo inspection — do NOT guess. label like "api/users" or
 "pkg/core"; path is the directory to scan; kind is the natural layer name for this
 repo (module / package / service / layer / source-dir).`,
-      { label: 'discover-targets', phase: 'Discover', schema: TARGET_SCHEMA, agentType: 'Explore' },
+      { label: 'discover-targets', phase: 'Discover', model: 'claude-opus-4-8', schema: TARGET_SCHEMA, agentType: 'Explore' },
     ),
   () =>
     agent(
@@ -145,7 +148,7 @@ gofmt -l, prettier --check, etc.) and run them. Then summarise: which files have
 most lint warnings/errors (path + count + the rule names), and which files fail the
 format check. Return a concise plain-text summary grouped by file path. If a command
 fails or none exists, say so and include any error verbatim. Do NOT modify any files.`,
-      { label: 'mechanical-checks', phase: 'Discover' },
+      { label: 'mechanical-checks', phase: 'Discover', model: 'claude-opus-4-8' },
     ),
 ])
 
@@ -179,7 +182,7 @@ For every issue report: file path (relative to repo root) + line number, which p
 Be precise and conservative — only real, actionable issues that respect the project's
 existing conventions. Report filesScanned and, if you could not open every eligible
 file, filesSkipped (else 0). Do NOT modify any files.`,
-      { label: `scan:${t.label}`, phase: 'Scan', schema: FINDINGS_SCHEMA, agentType: 'Explore' },
+      { label: `scan:${t.label}`, phase: 'Scan', model: 'claude-opus-4-8', schema: FINDINGS_SCHEMA, agentType: 'Explore' },
     ),
   ),
 )
@@ -217,7 +220,7 @@ Produce:
 4. A prioritised "Top 10 highest-impact fixes" list (favour high severity + recurring
    patterns across targets).
 Return ONLY the Markdown, no preamble.`,
-  { label: 'synthesize-report', phase: 'Synthesize' },
+  { label: 'synthesize-report', phase: 'Synthesize', model: 'claude-opus-4-8' },
 )
 
 return { report, totalFindings: allFindings.length, targets: results.length }

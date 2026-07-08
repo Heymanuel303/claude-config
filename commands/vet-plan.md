@@ -34,6 +34,8 @@ Interpolate the overview's goal + constraints + project facts + each phase's sta
 
 Author **one** `Workflow` call inline. It runs a single phase that fans out one `Explore` agent per plan phase in parallel, each forced to return structured findings via schema. Interpolate the resolved plan slug, goal, constraints, project facts, and the `PHASES` array as literals.
 
+Every `agent()` call in the script must include `model: 'claude-opus-4-8'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
+
 Use this script template, filling the placeholders from the resolved plan:
 
 ```js
@@ -104,7 +106,7 @@ const vetPrompt = (p) =>
 
 phase('Vet')
 const results = await parallel(PHASES.map(p => () =>
-  agent(vetPrompt(p), { label: `vet:${p.slug}`, phase: 'Vet', agentType: 'Explore', schema: VET_SCHEMA })))
+  agent(vetPrompt(p), { label: `vet:${p.slug}`, phase: 'Vet', agentType: 'Explore', model: 'claude-opus-4-8', schema: VET_SCHEMA })))
 
 return PHASES.map((p, i) => ({ phase: p.n, slug: p.slug, ...(results[i] || { skipped: true }) }))
 ```

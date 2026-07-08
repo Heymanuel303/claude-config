@@ -30,6 +30,8 @@ State the resolved target set in one line before running the workflow: modules (
 
 Author **one** `Workflow` call inline. Interpolate the module list, shared-library list, date, and focus hint as literals — agents start cold.
 
+Every `agent()` call in the script must include `model: 'claude-opus-4-8'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
+
 Shape: **Inventory (parallel barrier) → Match (you, in-script) → Verify (pipeline) → Synthesize.** The barrier after Inventory is genuinely needed: matching requires every module's inventory plus the shared-library inventory together.
 
 ```js
@@ -91,13 +93,13 @@ const inventories = await parallel([
     `utility, extension, formatter, validator, service wrapper, state pattern, or model that is NOT inherently tied to this ` +
     `module's business domain — i.e. could plausibly serve another module. Also include borderline items but mark appSpecific=true. ` +
     `Be concrete: real names, real paths. Read-only.`,
-    { label: `inventory:${m.name}`, phase: 'Inventory', agentType: 'Explore', schema: INVENTORY_SCHEMA }
+    { label: `inventory:${m.name}`, phase: 'Inventory', agentType: 'Explore', model: 'claude-opus-4-8', schema: INVENTORY_SCHEMA }
   )),
   ...LIBS.map(l => () => agent(
     `Inventory the PUBLIC API of the shared library at ${l.path} ("${l.name}").\n` +
     `Catalog every exported component, class, utility, extension, and theme/design token — kind + name + path + 1-line summary. ` +
     `Set appSpecific=false for all. This is used to detect when module code duplicates something the library already offers. Read-only.`,
-    { label: `inventory:${l.name}`, phase: 'Inventory', agentType: 'Explore', schema: INVENTORY_SCHEMA }
+    { label: `inventory:${l.name}`, phase: 'Inventory', agentType: 'Explore', model: 'claude-opus-4-8', schema: INVENTORY_SCHEMA }
   )),
 ])
 
@@ -113,7 +115,7 @@ const matcher = await agent(
   `2. LIBRARY-OVERLAP: module code that reimplements something a shared library already exports (fix = use the library, not extract).\n` +
   `3. GENERIC-SINGLE: code in one module that is clearly domain-free and likely needed by future modules (be conservative here).\n` +
   `For each candidate list the involved items (module + path + name) and a 1-line rationale. Skip anything marked appSpecific=true unless it appears in 2+ modules.`,
-  { label: 'match', phase: 'Match', schema: {
+  { label: 'match', phase: 'Match', model: 'claude-opus-4-8', schema: {
       type: 'object', required: ['candidates'],
       properties: { candidates: { type: 'array', items: {
         type: 'object', required: ['bucket', 'title', 'items', 'rationale'],
@@ -136,7 +138,7 @@ const verified = await pipeline(
     `the copies (are they really the same?), whether an existing shared library (${LIBS.map(l => l.name).join(', ')}) is the right home ` +
     `vs. a new library, and rough effort (S/M/L). For LIBRARY-OVERLAP, verify the library export actually covers the module's use ` +
     `and set targetLibrary to the existing library. Propose the extracted public API in 1-3 lines. Read-only.`,
-    { label: `verify:${c.title.slice(0, 30)}`, phase: 'Verify', schema: VERDICT_SCHEMA }
+    { label: `verify:${c.title.slice(0, 30)}`, phase: 'Verify', model: 'claude-opus-4-8', schema: VERDICT_SCHEMA }
   ).then(v => ({ ...c, verdict: v }))
 )
 

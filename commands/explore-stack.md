@@ -45,6 +45,8 @@ Typical layer shapes (adapt to what you find):
 
 Author **one** `Workflow` call inline. It runs a single phase that fans out one `Explore` agent per layer in parallel, each forced to return structured findings via schema. The workflow agents start cold — interpolate the resolved topic into the script as a string literal; never write "see conversation".
 
+Every `agent()` call in the script must include `model: 'claude-opus-4-8'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
+
 **Pre-flight:** do the discovery above first, then build the `LAYERS` array from the real, current layers/modules of this checkout — enumerate any monorepo app/package directories and interpolate their actual names into the scopes below. The script template's placeholder layers must be replaced with what actually exists in this repo. Include the db layer only if the repo has a database.
 
 Use this script template, filling `TOPIC` with the resolved question and `LAYERS` with the discovered layers:
@@ -107,7 +109,7 @@ const results = await parallel(LAYERS.map(layer => () =>
     `Follow the project's existing conventions; do not assume a toolchain. ` +
     `Return concrete paths (with line numbers), real symbol names, cross-references that point into other layers, ` +
     `gaps/inconsistencies, and open questions. Read-only — do not edit anything.`,
-    { label: `explore:${layer.key}`, phase: 'Explore', agentType: 'Explore', schema: FINDINGS_SCHEMA }
+    { label: `explore:${layer.key}`, phase: 'Explore', agentType: 'Explore', model: 'claude-opus-4-8', schema: FINDINGS_SCHEMA }
   )))
 
 return LAYERS.map((layer, i) => ({ layer: layer.key, ...(results[i] || { skipped: true }) }))

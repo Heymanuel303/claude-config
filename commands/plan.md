@@ -56,6 +56,8 @@ Author **one** `Workflow` call inline. It runs two phases: `Explore` (read-only 
 
 The script **cannot** call `Date.now()` / `new Date()` (they throw in workflow scripts). Interpolate the `date +%F` value you captured earlier as a literal when authoring the script — bake it into the `FEATURE` constant so the folder carries the date prefix. Do not compute the date inside the script.
 
+Every `agent()` call in the script must include `model: 'claude-fable-5'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
+
 Use this script template, filling the placeholders from the confirmed inputs and your phase list:
 
 ```js
@@ -100,12 +102,12 @@ const findings = await parallel(PHASES.map(p => () =>
     `Feature goal: ${GOAL}\nScope: ${SCOPE}\nThis phase's objective: ${p.objective}\n\n` +
     `Find the REAL files this phase must touch (exact paths), the actual APIs/signatures/symbols involved, ` +
     `existing patterns to mirror, and any gotchas or ordering constraints. Return concrete paths and symbols — no guesses.`,
-    { label: `explore:${p.slug}`, phase: 'Explore', agentType: 'Explore', schema: EXPLORE_SCHEMA }
+    { label: `explore:${p.slug}`, phase: 'Explore', agentType: 'Explore', model: 'claude-fable-5', schema: EXPLORE_SCHEMA }
   )))
 
 phase('Draft')
 const drafts = await parallel(PHASES.map((p, i) => () =>
-  agent(draftPrompt(p, findings[i]), { label: `draft:${p.slug}`, phase: 'Draft' })))
+  agent(draftPrompt(p, findings[i]), { label: `draft:${p.slug}`, phase: 'Draft', model: 'claude-fable-5' })))
 
 return { drafts }
 

@@ -53,6 +53,8 @@ Before launching, confirm in this session (cheap shell, no heavy reads). Discove
 
 One `Workflow` call. Interpolate the resolved overview path, folder, branch, and the `PHASES` array (with each phase's `n`, `slug`, `file`, `exec`) as **string literals** — the workflow script can't read your session state and its agents start cold. Sequential `for` loop, not `parallel()` — phases are dependent.
 
+Every `agent()` call in the script must include `model: 'claude-fable-5'` in its options object — subagents spawned by the workflow do not inherit this command's own `model:` frontmatter.
+
 ```js
 export const meta = {
   name: 'execute-all-{feature}',
@@ -118,7 +120,7 @@ for (const p of PHASES) {
       `discovered first (grep/Explore), do that discovery NOW and bake concrete paths into each unit's "files". ` +
       `Each unit's "instruction" must be self-contained (a cold agent will implement it from that text + the named files alone). ` +
       `Do NOT edit anything. If the work genuinely can't be split into disjoint-file units, return a SINGLE unit covering the whole phase.`,
-      { label: `scout:${p.slug}`, phase: 'Execute', schema: WORKLIST_SCHEMA }
+      { label: `scout:${p.slug}`, phase: 'Execute', model: 'claude-fable-5', schema: WORKLIST_SCHEMA }
     )
     const units = (plan && plan.units && plan.units.length)
       ? plan.units
@@ -131,7 +133,7 @@ for (const p of PHASES) {
         `Unit: ${u.instruction}\n\n` +
         `Follow the phase's intent and the surrounding repo conventions. Do NOT touch any file outside your unit. ` +
         `Do NOT run repo-wide verification, do NOT write tests, do NOT commit — the reconcile stage owns that. Leave changes uncommitted.`,
-        { label: `impl:${p.slug}:${u.label}`, phase: 'Execute' }
+        { label: `impl:${p.slug}:${u.label}`, phase: 'Execute', model: 'claude-fable-5' }
       )))
 
     // 1c. Reconcile: whole-tree verification + tests across the merged units.
@@ -140,7 +142,7 @@ for (const p of PHASES) {
       `Run the phase's FULL Verification against the merged tree (the project's lint / format / test / build commands as the phase lists) and fix any ` +
       `cross-unit breakage the per-unit agents couldn't see. Then write tests for this phase's changes per the /test command. ` +
       `Do NOT loosen tests or suppress lints. Leave the tree dirty and uncommitted — a later agent commits.`,
-      { label: `reconcile:${p.slug}`, phase: 'Execute' }
+      { label: `reconcile:${p.slug}`, phase: 'Execute', model: 'claude-fable-5' }
     )
   } else {
     // solo — one agent does the whole phase per /execute.
@@ -153,14 +155,14 @@ for (const p of PHASES) {
       `Leave ALL changes UNCOMMITTED — a later agent commits. Do NOT push or open a PR. Do NOT touch other phases. ` +
       `If the phase references something that doesn't exist, or a migration needs a destructive/breaking change without a safe rollout gate, ` +
       `STOP and report it as a blocker instead of papering over it.`,
-      { label: `execute:${p.slug}`, phase: 'Execute' }
+      { label: `execute:${p.slug}`, phase: 'Execute', model: 'claude-fable-5' }
     )
   }
 
   // 2. REVIEW → FIX loop. Independent agents; orchestrator sees only the verdict.
   let verdict, cycle = 0
   phase('Review')
-  verdict = await agent(reviewPrompt(p), { label: `review:${p.slug}`, phase: 'Review', schema: VERDICT_SCHEMA })
+  verdict = await agent(reviewPrompt(p), { label: `review:${p.slug}`, phase: 'Review', model: 'claude-fable-5', schema: VERDICT_SCHEMA })
 
   while (verdict && !verdict.pass && cycle < 2) {
     cycle++
@@ -170,10 +172,10 @@ for (const p of PHASES) {
       verdict.blocking.map((b, i) => `${i + 1}. ${b}`).join('\n') + `\n\n` +
       `Resolve every one, staying within the phase's scope. Re-run the phase's Verification commands until green ` +
       `(the project's lint / format / test / build commands). Do NOT loosen tests, suppress lints, or commit. Leave the tree dirty.`,
-      { label: `fix:${p.slug}#${cycle}`, phase: 'Fix' }
+      { label: `fix:${p.slug}#${cycle}`, phase: 'Fix', model: 'claude-fable-5' }
     )
     phase('Review')
-    verdict = await agent(reviewPrompt(p), { label: `reverify:${p.slug}#${cycle}`, phase: 'Review', schema: VERDICT_SCHEMA })
+    verdict = await agent(reviewPrompt(p), { label: `reverify:${p.slug}#${cycle}`, phase: 'Review', model: 'claude-fable-5', schema: VERDICT_SCHEMA })
   }
 
   if (!verdict || !verdict.pass) {
@@ -188,7 +190,7 @@ for (const p of PHASES) {
     `Follow the /commit command: stage the tree and write ONE Conventional Commits message scoped to what this phase delivered ` +
     `(summary: "${verdict.summary}"). Append the phase marker to the subject as the /commit command specifies, e.g. "feat(scope): ... (phase ${p.n})". ` +
     `Do NOT push, do NOT open a PR. Return ONLY the resulting commit SHA (git rev-parse --short HEAD).`,
-    { label: `commit:${p.slug}`, phase: 'Commit' }
+    { label: `commit:${p.slug}`, phase: 'Commit', model: 'claude-fable-5' }
   )
   results.push({ phase: p.n, slug: p.slug, status: 'committed', summary: verdict.summary, sha: (sha || '').trim() })
 }
